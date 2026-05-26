@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../models/artifact.dart';
 import '../generated/app_localizations.dart';
 import 'feedback_screen.dart';
+import 'model_viewer_screen.dart';
 
 class ArtifactDetailScreen extends StatefulWidget {
   final Artifact artifact;
@@ -133,6 +134,23 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                     Text(l10n.aboutArtifact, style: Theme.of(context).textTheme.headlineMedium),
                     const SizedBox(height: 16),
                     Text(_getDisplayText(l10n), style: Theme.of(context).textTheme.bodyLarge),
+                    if (widget.artifact.modelUrl?.isNotEmpty ?? false) ...[
+                      const SizedBox(height: 32),
+                      ElevatedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (c) => ModelViewerScreen(artifact: widget.artifact),
+                          ),
+                        ),
+                        icon: const Icon(Icons.view_in_ar_rounded),
+                        label: const Text('EXPERIENCE IN 3D'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFC9A84C),
+                          foregroundColor: const Color(0xFF2C1810),
+                        ),
+                      ),
+                    ],
                     if (widget.artifact.videoUrl?.isNotEmpty ?? false) ...[
                       const SizedBox(height: 40),
                       const Text('Discovery Video', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
