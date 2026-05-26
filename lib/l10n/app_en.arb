@@ -1,0 +1,22 @@
+{
+  "appTitle": "ArtSphere Guide",
+  "exhibits": "Exhibits",
+  "scanQR": "Scan QR",
+  "map": "Map",
+  "searchHint": "Search artifacts...",
+  "noArtifacts": "No artifacts in this section.",
+  "noResults": "No artifacts found.",
+  "searchPrompt": "Start typing to search artifacts...",
+  "aboutArtifact": "About this Artifact",
+  "listen": "Listen",
+  "stop": "Stop",
+  "romanEmpire": "Roman Empire",
+  "ancientSriLanka": "Ancient Sri Lanka",
+  "scanTitle": "Scan Artifact QR Code",
+  "scanPrompt": "Point camera at artifact QR code",
+  "view3D": "3D View",
+  "museumMap": "Museum Map",
+  "tapRoom": "Tap a room to see artifacts",
+  "entrance": "ENTRANCE",
+  "exit": "EXIT"
+}
