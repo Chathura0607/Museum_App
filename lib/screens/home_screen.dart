@@ -264,16 +264,39 @@ class _HomeScreenState extends State<HomeScreen> {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: filtered.length,
-      itemBuilder: (context, index) => _buildArtifactCard(_docToArtifact(filtered[index])),
+      itemBuilder: (context, index) => TweenAnimationBuilder<double>(
+        duration: Duration(milliseconds: 400 + (index * 100)),
+        tween: Tween(begin: 0.0, end: 1.0),
+        builder: (context, value, child) => Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - value)),
+            child: child,
+          ),
+        ),
+        child: _buildArtifactCard(_docToArtifact(filtered[index])),
+      ),
     );
   }
 
   Widget _buildSectionArtifacts(List<QueryDocumentSnapshot> docs, AppLocalizations l10n) {
     final sectionDocs = docs.where((doc) => doc['section'] == selectedSection).toList();
     return ListView.builder(
+      key: ValueKey(selectedSection), // Key ensures animation restarts on section change
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: sectionDocs.length,
-      itemBuilder: (context, index) => _buildArtifactCard(_docToArtifact(sectionDocs[index])),
+      itemBuilder: (context, index) => TweenAnimationBuilder<double>(
+        duration: Duration(milliseconds: 400 + (index * 100)),
+        tween: Tween(begin: 0.0, end: 1.0),
+        builder: (context, value, child) => Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - value)),
+            child: child,
+          ),
+        ),
+        child: _buildArtifactCard(_docToArtifact(sectionDocs[index])),
+      ),
     );
   }
 

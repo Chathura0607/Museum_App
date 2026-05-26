@@ -97,66 +97,94 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFFC9A84C), width: 1.5),
-                        boxShadow: [BoxShadow(color: const Color(0xFFC9A84C).withOpacity(0.1), blurRadius: 40)],
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(seconds: 1),
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      builder: (context, value, child) => Opacity(
+                        opacity: value,
+                        child: Transform.scale(scale: 0.5 + (0.5 * value), child: child),
                       ),
-                      child: const Icon(Icons.museum_rounded, size: 50, color: Color(0xFFC9A84C)),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFC9A84C), width: 1.5),
+                          boxShadow: [BoxShadow(color: const Color(0xFFC9A84C).withOpacity(0.1), blurRadius: 40)],
+                        ),
+                        child: const Icon(Icons.museum_rounded, size: 50, color: Color(0xFFC9A84C)),
+                      ),
                     ),
                     const SizedBox(height: 24),
-                    const Text('ARTSPHERE', style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 8)),
-                    const Text('YOUR PERSONAL CURATOR', style: TextStyle(fontSize: 10, color: Color(0xFFC9A84C), letterSpacing: 4, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 60),
-                    Container(
-                      padding: const EdgeInsets.all(40),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(40),
-                        border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 800),
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      builder: (context, value, child) => Opacity(
+                        opacity: value,
+                        child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
                       ),
                       child: Column(
                         children: [
-                          TextField(
-                            controller: _ticketController,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              labelText: 'TICKET PASS ID',
-                              labelStyle: const TextStyle(color: Colors.white60, fontSize: 11),
-                              errorText: _ticketError,
-                              prefixIcon: const Icon(Icons.confirmation_num_rounded, color: Color(0xFFC9A84C)),
-                              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.2))),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          TextField(
-                            controller: _idController,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: InputDecoration(
-                              labelText: 'NIC NUMBER',
-                              labelStyle: const TextStyle(color: Colors.white60, fontSize: 11),
-                              errorText: _nicError,
-                              prefixIcon: const Icon(Icons.badge_rounded, color: Color(0xFFC9A84C)),
-                              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.2))),
-                            ),
-                          ),
-                          const SizedBox(height: 48),
-                          ElevatedButton(
-                            onPressed: _isLoading ? null : _login,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFC9A84C),
-                              foregroundColor: const Color(0xFF2C1810),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              padding: const EdgeInsets.symmetric(vertical: 20),
-                            ),
-                            child: _isLoading 
-                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2C1810))) 
-                              : const Text('BEGIN JOURNEY', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2)),
-                          ),
+                          const Text('ARTSPHERE', style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 8)),
+                          const Text('YOUR PERSONAL CURATOR', style: TextStyle(fontSize: 10, color: Color(0xFFC9A84C), letterSpacing: 4, fontWeight: FontWeight.bold)),
                         ],
+                      ),
+                    ),
+                    const SizedBox(height: 60),
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 1000),
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      builder: (context, value, child) => Opacity(
+                        opacity: value,
+                        child: Transform.translate(offset: Offset(0, 40 * (1 - value)), child: child),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(40),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(40),
+                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                        ),
+                        child: Column(
+                          children: [
+                            TextField(
+                              controller: _ticketController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                labelText: 'TICKET PASS ID',
+                                labelStyle: const TextStyle(color: Colors.white60, fontSize: 11),
+                                errorText: _ticketError,
+                                prefixIcon: const Icon(Icons.confirmation_num_rounded, color: Color(0xFFC9A84C)),
+                                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.2))),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            TextField(
+                              controller: _idController,
+                              style: const TextStyle(color: Colors.white),
+                              decoration: InputDecoration(
+                                labelText: 'NIC NUMBER',
+                                labelStyle: const TextStyle(color: Colors.white60, fontSize: 11),
+                                errorText: _nicError,
+                                prefixIcon: const Icon(Icons.badge_rounded, color: Color(0xFFC9A84C)),
+                                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.2))),
+                              ),
+                            ),
+                            const SizedBox(height: 48),
+                            ElevatedButton(
+                              onPressed: _isLoading ? null : _login,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFC9A84C),
+                                foregroundColor: const Color(0xFF2C1810),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                              ),
+                              child: _isLoading 
+                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2C1810))) 
+                                : const Text('BEGIN JOURNEY', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2)),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 48),

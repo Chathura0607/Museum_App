@@ -104,13 +104,21 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(widget.artifact.name, style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 28)),
-                              const SizedBox(height: 8),
-                              Text(widget.artifact.period, style: const TextStyle(fontSize: 18, color: Color(0xFFC9A84C), fontWeight: FontWeight.bold)),
-                            ],
+                          child: TweenAnimationBuilder<double>(
+                            duration: const Duration(milliseconds: 600),
+                            tween: Tween(begin: 0.0, end: 1.0),
+                            builder: (context, value, child) => Opacity(
+                              opacity: value,
+                              child: Transform.translate(offset: Offset(-20 * (1 - value), 0), child: child),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(widget.artifact.name, style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 28)),
+                                const SizedBox(height: 8),
+                                Text(widget.artifact.period, style: const TextStyle(fontSize: 18, color: Color(0xFFC9A84C), fontWeight: FontWeight.bold)),
+                              ],
+                            ),
                           ),
                         ),
                         IconButton.filled(
@@ -121,19 +129,32 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 800),
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      builder: (context, value, child) => Opacity(
+                        opacity: value,
+                        child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildInfoChip(Icons.museum_rounded, widget.artifact.section),
-                          if (widget.artifact.location?.isNotEmpty ?? false) ...[const SizedBox(width: 8), _buildInfoChip(Icons.location_on_rounded, widget.artifact.location!)],
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                _buildInfoChip(Icons.museum_rounded, widget.artifact.section),
+                                if (widget.artifact.location?.isNotEmpty ?? false) ...[const SizedBox(width: 8), _buildInfoChip(Icons.location_on_rounded, widget.artifact.location!)],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          Text(l10n.aboutArtifact, style: Theme.of(context).textTheme.headlineMedium),
+                          const SizedBox(height: 16),
+                          Text(_getDisplayText(l10n), style: Theme.of(context).textTheme.bodyLarge),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
-                    Text(l10n.aboutArtifact, style: Theme.of(context).textTheme.headlineMedium),
-                    const SizedBox(height: 16),
-                    Text(_getDisplayText(l10n), style: Theme.of(context).textTheme.bodyLarge),
                     if (widget.artifact.modelUrl?.isNotEmpty ?? false) ...[
                       const SizedBox(height: 32),
                       ElevatedButton.icon(
