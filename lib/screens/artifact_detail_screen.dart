@@ -90,9 +90,9 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
           ),
           SliverToBoxAdapter(
             child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFFFCFAF7),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
               ),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 32, 24, 80),
@@ -210,15 +210,20 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
   }
 
   Widget _buildInfoChip(IconData icon, String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.brown.shade50)),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white, 
+        borderRadius: BorderRadius.circular(16), 
+        border: Border.all(color: isDark ? Colors.white10 : Colors.brown.shade50)
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: Colors.brown),
+          Icon(icon, size: 16, color: const Color(0xFFC9A84C)),
           const SizedBox(width: 8),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87)),
+          Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: isDark ? Colors.white70 : Colors.black87)),
         ],
       ),
     );

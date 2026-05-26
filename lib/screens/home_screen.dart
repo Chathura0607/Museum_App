@@ -41,7 +41,8 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _showLanguageSelector() {
+  void _showSettings() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
@@ -51,28 +52,52 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('SELECT LANGUAGE / භාෂාව තෝරන්න', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C1810))),
+            const Text('SETTINGS / සැකසුම්', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFFC9A84C))),
             const SizedBox(height: 24),
-            ListTile(
-              leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
-              title: const Text('English', style: TextStyle(fontWeight: FontWeight.bold)),
-              trailing: !_isSinhala ? const Icon(Icons.check_circle, color: Color(0xFFC9A84C)) : null,
-              onTap: () {
-                setState(() => _isSinhala = false);
-                MuseumApp.setLocale(context, const Locale('en'));
-                Navigator.pop(context);
-              },
+            const Text('LANGUAGE / භාෂාව', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ChoiceChip(
+                    label: const Center(child: Text('English')),
+                    selected: !_isSinhala,
+                    onSelected: (val) {
+                      setState(() => _isSinhala = false);
+                      MuseumApp.setLocale(context, const Locale('en'));
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ChoiceChip(
+                    label: const Center(child: Text('සිංහල')),
+                    selected: _isSinhala,
+                    onSelected: (val) {
+                      setState(() => _isSinhala = true);
+                      MuseumApp.setLocale(context, const Locale('si'));
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              ],
             ),
-            const Divider(),
+            const SizedBox(height: 32),
+            const Text('APPEARANCE / පෙනුම', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2)),
+            const SizedBox(height: 12),
             ListTile(
-              leading: const Text('🇱🇰', style: TextStyle(fontSize: 24)),
-              title: const Text('සිංහල (Sinhala)', style: TextStyle(fontWeight: FontWeight.bold)),
-              trailing: _isSinhala ? const Icon(Icons.check_circle, color: Color(0xFFC9A84C)) : null,
-              onTap: () {
-                setState(() => _isSinhala = true);
-                MuseumApp.setLocale(context, const Locale('si'));
-                Navigator.pop(context);
-              },
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, color: const Color(0xFFC9A84C)),
+              title: Text(isDark ? 'Dark Mode' : 'Light Mode', style: const TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(isDark ? 'සඳ එළිය (අඳුරු)' : 'හිරු එළිය (දීප්තිමත්)'),
+              trailing: Switch(
+                value: isDark,
+                onChanged: (val) {
+                  MuseumApp.setThemeMode(context, val ? ThemeMode.dark : ThemeMode.light);
+                  Navigator.pop(context);
+                },
+              ),
             ),
           ],
         ),
@@ -140,14 +165,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMuseumScreen(AppLocalizations l10n) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
         title: _isSearching
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                style: const TextStyle(color: Color(0xFFC9A84C)),
-                decoration: const InputDecoration(hintText: 'Search artifacts...', hintStyle: TextStyle(color: Colors.white54), border: InputBorder.none),
+                style: TextStyle(color: isDark ? Colors.white : const Color(0xFFC9A84C)),
+                decoration: InputDecoration(
+                  hintText: 'Search artifacts...', 
+                  hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.white70), 
+                  border: InputBorder.none
+                ),
                 onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
               )
             : Row(
@@ -160,7 +190,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
         actions: [
           if (!_isSearching) IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()))),
-          if (!_isSearching) IconButton(icon: const Icon(Icons.language_rounded), onPressed: _showLanguageSelector),
+          if (!_isSearching) IconButton(icon: const Icon(Icons.settings_outlined), onPressed: _showSettings),
           _isSearching 
             ? IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() { _isSearching = false; _searchQuery = ''; _searchController.clear(); }))
             : IconButton(icon: const Icon(Icons.search), onPressed: () => setState(() => _isSearching = true)),
@@ -204,10 +234,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 label: Text(section),
                                 selected: isSelected,
                                 onSelected: (val) => setState(() => selectedSection = section),
-                                selectedColor: const Color(0xFF2C1810),
-                                backgroundColor: Colors.white,
-                                labelStyle: TextStyle(color: isSelected ? const Color(0xFFC9A84C) : Colors.black87, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: isSelected ? Colors.transparent : Colors.grey.shade200)),
+                                selectedColor: isDark ? const Color(0xFFC9A84C) : const Color(0xFF2C1810),
+                                backgroundColor: isDark ? Colors.white10 : Colors.white,
+                                labelStyle: TextStyle(
+                                  color: isSelected 
+                                    ? (isDark ? const Color(0xFF2C1810) : const Color(0xFFC9A84C)) 
+                                    : (isDark ? Colors.white70 : Colors.black87), 
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12), 
+                                  side: BorderSide(color: isSelected ? Colors.transparent : (isDark ? Colors.white10 : Colors.grey.shade200))
+                                ),
                                 showCheckmark: false,
                               ),
                             );
