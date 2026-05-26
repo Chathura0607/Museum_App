@@ -70,8 +70,26 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          Positioned.fill(child: Image.network('https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=1200', fit: BoxFit.cover)),
-          Positioned.fill(child: Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.8)])))),
+          Positioned.fill(
+            child: Image.network(
+              'https://images.unsplash.com/photo-1554907984-15263bfd63bd?q=80&w=1920&auto=format&fit=crop',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF2C1810).withOpacity(0.4),
+                    const Color(0xFF2C1810).withOpacity(0.95),
+                  ],
+                ),
+              ),
+            ),
+          ),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
@@ -80,34 +98,72 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2C1810),
+                        color: Colors.white.withOpacity(0.05),
                         shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: const Color(0xFFC9A84C).withOpacity(0.3), blurRadius: 20)],
-                        border: Border.all(color: const Color(0xFFC9A84C), width: 2),
+                        border: Border.all(color: const Color(0xFFC9A84C), width: 1.5),
+                        boxShadow: [BoxShadow(color: const Color(0xFFC9A84C).withOpacity(0.1), blurRadius: 40)],
                       ),
-                      child: const Icon(Icons.museum_rounded, size: 48, color: Color(0xFFC9A84C)),
+                      child: const Icon(Icons.museum_rounded, size: 50, color: Color(0xFFC9A84C)),
                     ),
                     const SizedBox(height: 24),
-                    const Text('ARTSPHERE', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 4)),
-                    const Text('REIMAGINING HISTORY', style: TextStyle(fontSize: 12, color: Colors.white70, letterSpacing: 2)),
+                    const Text('ARTSPHERE', style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 8)),
+                    const Text('YOUR PERSONAL CURATOR', style: TextStyle(fontSize: 10, color: Color(0xFFC9A84C), letterSpacing: 4, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 60),
                     Container(
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.95), borderRadius: BorderRadius.circular(32), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 40)]),
+                      padding: const EdgeInsets.all(40),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(40),
+                        border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      ),
                       child: Column(
                         children: [
-                          TextField(controller: _ticketController, decoration: InputDecoration(labelText: 'TICKET PASS ID', errorText: _ticketError, prefixIcon: const Icon(Icons.confirmation_num_rounded))),
-                          const SizedBox(height: 16),
-                          TextField(controller: _idController, decoration: InputDecoration(labelText: 'NIC NUMBER', errorText: _nicError, prefixIcon: const Icon(Icons.badge_rounded))),
-                          const SizedBox(height: 32),
-                          ElevatedButton(onPressed: _isLoading ? null : _login, child: _isLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFC9A84C))) : const Text('BEGIN JOURNEY')),
+                          TextField(
+                            controller: _ticketController,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              labelText: 'TICKET PASS ID',
+                              labelStyle: const TextStyle(color: Colors.white60, fontSize: 11),
+                              errorText: _ticketError,
+                              prefixIcon: const Icon(Icons.confirmation_num_rounded, color: Color(0xFFC9A84C)),
+                              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.2))),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          TextField(
+                            controller: _idController,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              labelText: 'NIC NUMBER',
+                              labelStyle: const TextStyle(color: Colors.white60, fontSize: 11),
+                              errorText: _nicError,
+                              prefixIcon: const Icon(Icons.badge_rounded, color: Color(0xFFC9A84C)),
+                              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white.withOpacity(0.2))),
+                            ),
+                          ),
+                          const SizedBox(height: 48),
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : _login,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFC9A84C),
+                              foregroundColor: const Color(0xFF2C1810),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              padding: const EdgeInsets.symmetric(vertical: 20),
+                            ),
+                            child: _isLoading 
+                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2C1810))) 
+                              : const Text('BEGIN JOURNEY', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 2)),
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 40),
-                    TextButton(onPressed: _showAdminLogin, child: const Text('CURATOR PORTAL', style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 1.5))),
+                    const SizedBox(height: 48),
+                    TextButton(
+                      onPressed: _showAdminLogin,
+                      child: Text('CURATOR PORTAL', style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 11, letterSpacing: 3, fontWeight: FontWeight.bold)),
+                    ),
                   ],
                 ),
               ),
