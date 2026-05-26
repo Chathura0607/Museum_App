@@ -9,6 +9,8 @@ import 'map_screen.dart';
 import 'qr_scanner_screen.dart';
 import 'assistant_screen.dart';
 import 'model_viewer_screen.dart';
+import 'notifications_screen.dart';
+import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,12 +26,18 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   bool _isSinhala = false;
   final TextEditingController _searchController = TextEditingController();
+  
+  // Notification banner logic
+  String? _lastNotifId;
+  bool _showBanner = false;
+  Timer? _hideTimer;
 
   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
 
   @override
   void dispose() {
     _searchController.dispose();
+    _hideTimer?.cancel();
     super.dispose();
   }
 
@@ -108,8 +116,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: const InputDecoration(hintText: 'Search artifacts...', hintStyle: TextStyle(color: Colors.white54), border: InputBorder.none),
                 onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
               )
-            : const Text('ArtSphere', style: TextStyle(letterSpacing: 1.5, fontWeight: FontWeight.w900)),
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.museum_rounded, size: 24, color: Color(0xFFC9A84C)),
+                  const SizedBox(width: 12),
+                  const Text('ARTSPHERE', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.w900, fontSize: 18)),
+                ],
+              ),
         actions: [
+          if (!_isSearching) IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()))),
           if (!_isSearching) IconButton(icon: const Icon(Icons.translate), onPressed: _toggleLanguage),
           _isSearching 
             ? IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() { _isSearching = false; _searchQuery = ''; _searchController.clear(); }))
@@ -182,29 +198,56 @@ class _HomeScreenState extends State<HomeScreen> {
       stream: _firestore.collection('notifications').orderBy('timestamp', descending: true).limit(1).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const SizedBox.shrink();
-        final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
-        return Container(
-          margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFC9A84C).withOpacity(0.15),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFC9A84C).withOpacity(0.3)),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.campaign_rounded, color: Color(0xFF2C1810)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(data['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2C1810))),
-                    Text(data['message'] ?? '', style: TextStyle(fontSize: 13, color: Colors.black.withOpacity(0.7))),
-                  ],
+        
+        final doc = snapshot.data!.docs.first;
+        final data = doc.data() as Map<String, dynamic>;
+        final String currentId = doc.id;
+
+        // Logic to trigger 30s timer when a NEW notification arrives
+        if (_lastNotifId != currentId) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setState(() {
+              _lastNotifId = currentId;
+              _showBanner = true;
+            });
+            _hideTimer?.cancel();
+            _hideTimer = Timer(const Duration(seconds: 30), () {
+              if (mounted) setState(() => _showBanner = false);
+            });
+          });
+        }
+
+        if (!_showBanner) return const SizedBox.shrink();
+
+        return GestureDetector(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFC9A84C),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.campaign_rounded, color: Color(0xFF2C1810)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(data['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2C1810))),
+                      Text(data['message'] ?? '', style: const TextStyle(fontSize: 13, color: Color(0xFF2C1810)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                IconButton(
+                  icon: const Icon(Icons.close, size: 18, color: Color(0xFF2C1810)),
+                  onPressed: () => setState(() => _showBanner = false),
+                )
+              ],
+            ),
           ),
         );
       },

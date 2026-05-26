@@ -228,6 +228,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.all(32),
@@ -238,9 +239,43 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 const SizedBox(height: 16),
                 TextField(controller: msg, maxLines: 3, decoration: const InputDecoration(labelText: 'Detailed Message')),
                 const SizedBox(height: 32),
-                ElevatedButton(onPressed: () { if (title.text.isEmpty) return; FirebaseFirestore.instance.collection('notifications').add({'title': title.text, 'message': msg.text, 'timestamp': FieldValue.serverTimestamp()}); title.clear(); msg.clear(); }, child: const Text('DISPATCH BROADCAST')),
+                ElevatedButton(onPressed: () async { 
+                  if (title.text.isEmpty) return; 
+                  await FirebaseFirestore.instance.collection('notifications').add({'title': title.text, 'message': msg.text, 'timestamp': FieldValue.serverTimestamp()}); 
+                  title.clear(); msg.clear(); 
+                }, child: const Text('DISPATCH BROADCAST')),
               ],
             ),
+          ),
+          const SizedBox(height: 48),
+          const Text('Sent History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C1810))),
+          const SizedBox(height: 24),
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('notifications').orderBy('timestamp', descending: true).snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const SizedBox();
+              return Column(
+                children: snapshot.data!.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final date = (data['timestamp'] as Timestamp?)?.toDate();
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      title: Text(data['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(data['message'] ?? ''),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (date != null) Text(DateFormat('MMM dd').format(date), style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                          const SizedBox(width: 8),
+                          IconButton(icon: const Icon(Icons.delete_outline_rounded, size: 20), onPressed: () => FirebaseFirestore.instance.collection('notifications').doc(doc.id).delete()),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              );
+            },
           ),
         ],
       ),
