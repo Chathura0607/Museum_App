@@ -6,6 +6,7 @@ import '../models/artifact.dart';
 import '../generated/app_localizations.dart';
 import 'feedback_screen.dart';
 import 'model_viewer_screen.dart';
+import 'model_viewer_web.dart' if (dart.library.io) 'model_viewer_stub.dart';
 
 class ArtifactDetailScreen extends StatefulWidget {
   final Artifact artifact;
@@ -238,17 +239,23 @@ class VideoPlayerPage extends StatefulWidget {
 }
 
 class _VideoPlayerPageState extends State<VideoPlayerPage> {
-  late final WebViewController controller;
+  WebViewController? controller;
   @override
   void initState() {
     super.initState();
-    controller = WebViewController()..setJavaScriptMode(JavaScriptMode.unrestricted)..loadRequest(Uri.parse(widget.url));
+    if (!kIsWeb) {
+      controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..loadRequest(Uri.parse(widget.url));
+    }
   }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Guide Video')),
-      body: WebViewWidget(controller: controller),
+      body: kIsWeb 
+        ? buildWebView(widget.url, 'video-${widget.url.hashCode}')
+        : WebViewWidget(controller: controller!),
     );
   }
 }
