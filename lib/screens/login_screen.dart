@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'home_screen.dart';
+import 'admin/admin_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,144 +13,113 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _ticketController = TextEditingController();
   final TextEditingController _idController = TextEditingController();
   bool _isLoading = false;
-  String? _error;
+  String? _ticketError;
+  String? _nicError;
 
-  void _login() {
-    final ticket = _ticketController.text.trim();
-    final id = _idController.text.trim().toUpperCase();
-    if (ticket.isEmpty) {
-      setState(() => _error = 'Please enter your ticket number');
-      return;
-    }
-    final oldNIC = RegExp(r'^\d{9}[VX]$');
-    final newNIC = RegExp(r'^\d{12}$');
-    if (!oldNIC.hasMatch(id) && !newNIC.hasMatch(id)) {
-      setState(() => _error = 'Invalid NIC. Use 9 digits + V/X or 12 digits');
-      return;
-    }
-    setState(() { _isLoading = true; _error = null; });
-    Future.delayed(const Duration(seconds: 1), () {
-      Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()));
-    });
+  final _ticketRegex = RegExp(r'^TKT-\d{4}-\d{3}$');
+  final _oldNICRegex = RegExp(r'^\d{9}[VX]$');
+  final _newNICRegex = RegExp(r'^\d{12}$');
+
+  @override
+  void initState() {
+    super.initState();
+    _ticketController.addListener(_validateTicket);
+    _idController.addListener(_validateNIC);
+  }
+
+  void _validateTicket() {
+    final val = _ticketController.text.trim().toUpperCase();
+    if (val.isEmpty) setState(() => _ticketError = null);
+    else if (!_ticketRegex.hasMatch(val)) setState(() => _ticketError = 'Required: TKT-2025-001');
+    else setState(() => _ticketError = null);
+  }
+
+  void _validateNIC() {
+    final val = _idController.text.trim().toUpperCase();
+    if (val.isEmpty) setState(() => _nicError = null);
+    else if (!_oldNICRegex.hasMatch(val) && !_newNICRegex.hasMatch(val)) setState(() => _nicError = 'Invalid NIC format');
+    else setState(() => _nicError = null);
+  }
+
+  Future<void> _login() async {
+    final ticketId = _ticketController.text.trim().toUpperCase();
+    final nic = _idController.text.trim().toUpperCase();
+    if (_ticketError != null || _nicError != null || ticketId.isEmpty || nic.isEmpty) return;
+    setState(() => _isLoading = true);
+    try {
+      final ticketRef = FirebaseFirestore.instance.collection('tickets').doc(ticketId);
+      final ticketDoc = await ticketRef.get();
+      if (ticketDoc.exists) {
+        final data = ticketDoc.data()!;
+        if (data['isBlocked'] ?? false) throw 'Ticket blocked. Visit Information Desk.';
+        final List users = List.from(data['usedBy'] ?? []);
+        if (!users.contains(nic)) {
+          if (users.length >= 4) { await ticketRef.update({'isBlocked': true}); throw 'User limit reached. Ticket BLOCKED.'; }
+          users.add(nic); await ticketRef.update({'usedBy': users});
+        }
+      } else { await ticketRef.set({'usedBy': [nic], 'isBlocked': false, 'createdAt': FieldValue.serverTimestamp()}); }
+      await FirebaseFirestore.instance.collection('attendance').add({'ticketNumber': ticketId, 'nic': nic, 'timestamp': FieldValue.serverTimestamp()});
+      if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+    } catch (e) {
+      if (mounted) showDialog(context: context, builder: (ctx) => AlertDialog(title: const Text('Access Restricted'), content: Text(e.toString()), actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('UNDERSTOOD'))]));
+    } finally { if (mounted) setState(() => _isLoading = false); }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1C1208),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFC9A84C), width: 2),
-                    color: const Color(0xFF2C1810),
-                  ),
-                  child: Image.asset('assets/images/app_icon.png',
-                    width: 80, height: 80,
-                    errorBuilder: (c, e, s) => const Icon(Icons.museum, size: 80, color: Color(0xFFC9A84C)),
-                  ),
+      body: Stack(
+        children: [
+          Positioned.fill(child: Image.network('https://images.unsplash.com/photo-1544197150-b99a580bb7a8?q=80&w=1200', fit: BoxFit.cover)),
+          Positioned.fill(child: Container(decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Colors.black.withOpacity(0.2), Colors.black.withOpacity(0.8)])))),
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2C1810),
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: const Color(0xFFC9A84C).withOpacity(0.3), blurRadius: 20)],
+                        border: Border.all(color: const Color(0xFFC9A84C), width: 2),
+                      ),
+                      child: const Icon(Icons.museum_rounded, size: 48, color: Color(0xFFC9A84C)),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text('ARTSPHERE', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 4)),
+                    const Text('REIMAGINING HISTORY', style: TextStyle(fontSize: 12, color: Colors.white70, letterSpacing: 2)),
+                    const SizedBox(height: 60),
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.95), borderRadius: BorderRadius.circular(32), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 40)]),
+                      child: Column(
+                        children: [
+                          TextField(controller: _ticketController, decoration: InputDecoration(labelText: 'TICKET PASS ID', errorText: _ticketError, prefixIcon: const Icon(Icons.confirmation_num_rounded))),
+                          const SizedBox(height: 16),
+                          TextField(controller: _idController, decoration: InputDecoration(labelText: 'NIC NUMBER', errorText: _nicError, prefixIcon: const Icon(Icons.badge_rounded))),
+                          const SizedBox(height: 32),
+                          ElevatedButton(onPressed: _isLoading ? null : _login, child: _isLoading ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFC9A84C))) : const Text('BEGIN JOURNEY')),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    TextButton(onPressed: _showAdminLogin, child: const Text('CURATOR PORTAL', style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 1.5))),
+                  ],
                 ),
-                const SizedBox(height: 24),
-                const Text('ArtSphere Guide',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold,
-                      color: Color(0xFFC9A84C), letterSpacing: 1.2)),
-                const SizedBox(height: 8),
-                const Text('Your Museum Experience Awaits',
-                  style: TextStyle(fontSize: 14, color: Colors.white54)),
-                const SizedBox(height: 40),
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2C1810),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFF8B6914), width: 1),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Ticket Number',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold,
-                            color: Color(0xFFC9A84C))),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _ticketController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: 'e.g. TKT-2024-001',
-                          hintStyle: const TextStyle(color: Colors.white38),
-                          prefixIcon: const Icon(Icons.confirmation_number, color: Color(0xFFC9A84C)),
-                          filled: true,
-                          fillColor: const Color(0xFF1C1208),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFF8B6914))),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFF8B6914))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFFC9A84C), width: 2)),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text('National ID Number (NIC)',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold,
-                            color: Color(0xFFC9A84C))),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _idController,
-                        textCapitalization: TextCapitalization.characters,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: 'e.g. 123456789V or 200012345678',
-                          hintStyle: const TextStyle(color: Colors.white38),
-                          prefixIcon: const Icon(Icons.badge, color: Color(0xFFC9A84C)),
-                          filled: true,
-                          fillColor: const Color(0xFF1C1208),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFF8B6914))),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFF8B6914))),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFFC9A84C), width: 2)),
-                          errorText: _error,
-                          errorStyle: const TextStyle(color: Colors.redAccent),
-                        ),
-                        onSubmitted: (_) => _login(),
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _login,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFC9A84C),
-                            foregroundColor: const Color(0xFF1C1208),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          child: _isLoading
-                              ? const CircularProgressIndicator(color: Color(0xFF1C1208))
-                              : const Text('Enter Museum',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text('Ticket available at the museum entrance',
-                  style: TextStyle(color: Colors.white38, fontSize: 12)),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
+  }
+
+  void _showAdminLogin() {
+    final passwordController = TextEditingController();
+    showDialog(context: context, builder: (context) => AlertDialog(title: const Text('Staff Secure Login'), content: TextField(controller: passwordController, obscureText: true, decoration: const InputDecoration(hintText: 'Passcode')), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('BACK')), TextButton(onPressed: () { if (passwordController.text == 'admin123') { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboard())); } }, child: const Text('ACCESS'))]));
   }
 }

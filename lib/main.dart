@@ -12,7 +12,7 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
-    // Firebase already initialized
+    debugPrint('Firebase initialization error: $e');
   }
   runApp(const MuseumApp());
 }
@@ -21,8 +21,7 @@ class MuseumApp extends StatefulWidget {
   const MuseumApp({super.key});
 
   static void setLocale(BuildContext context, Locale newLocale) {
-    _MuseumAppState? state =
-        context.findAncestorStateOfType<_MuseumAppState>();
+    _MuseumAppState? state = context.findAncestorStateOfType<_MuseumAppState>();
     state?.setLocale(newLocale);
   }
 
@@ -43,10 +42,7 @@ class _MuseumAppState extends State<MuseumApp> {
       title: 'ArtSphere Guide',
       debugShowCheckedModeBanner: false,
       locale: _locale,
-      supportedLocales: const [
-        Locale('en'),
-        Locale('si'),
-      ],
+      supportedLocales: const [Locale('en'), Locale('si')],
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -54,45 +50,45 @@ class _MuseumAppState extends State<MuseumApp> {
         GlobalCupertinoLocalizations.delegate,
       ],
       theme: ThemeData(
+        useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF2C1810),
           primary: const Color(0xFF2C1810),
           secondary: const Color(0xFFC9A84C),
-          surface: const Color(0xFFFAF7F2),
+          surface: const Color(0xFFFCFAF7),
         ),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFFAF7F2),
+        scaffoldBackgroundColor: const Color(0xFFFCFAF7),
+        textTheme: const TextTheme(
+          displayLarge: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF2C1810), letterSpacing: -0.5),
+          headlineMedium: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: Color(0xFF2C1810)),
+          titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2C1810)),
+          bodyLarge: TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+          bodyMedium: TextStyle(fontSize: 14, height: 1.4, color: Colors.black54),
+        ),
         appBarTheme: const AppBarTheme(
+          centerTitle: true,
           backgroundColor: Color(0xFF2C1810),
           foregroundColor: Color(0xFFC9A84C),
-          titleTextStyle: TextStyle(
-            color: Color(0xFFC9A84C),
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-          iconTheme: IconThemeData(color: Color(0xFFC9A84C)),
+          elevation: 0,
+          titleTextStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFC9A84C)),
         ),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Color(0xFF2C1810),
-          selectedItemColor: Color(0xFFC9A84C),
-          unselectedItemColor: Colors.white54,
+        cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.brown.shade100, width: 1),
+          ),
+          color: Colors.white,
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFC9A84C),
-            foregroundColor: const Color(0xFF1C1208),
+            elevation: 0,
+            backgroundColor: const Color(0xFF2C1810),
+            foregroundColor: const Color(0xFFC9A84C),
+            minimumSize: const Size(double.infinity, 54),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1),
           ),
-        ),
-        cardTheme: CardThemeData(
-          color: Colors.white,
-          elevation: 3,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        floatingActionButtonTheme: const FloatingActionButtonThemeData(
-          backgroundColor: Color(0xFF2C1810),
-          foregroundColor: Color(0xFFC9A84C),
         ),
       ),
       home: const LoginScreen(),

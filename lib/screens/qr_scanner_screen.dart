@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import '../generated/app_localizations.dart';
 import '../models/artifact.dart';
 import 'artifact_detail_screen.dart';
@@ -46,8 +46,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     _controller?.stop();
 
     try {
-      final db = FirebaseFirestore.instanceFor(
-          app: Firebase.app(), databaseId: 'default');
+      final db = FirebaseFirestore.instance;
       final doc = await db.collection('artifacts').doc(code).get();
 
       if (!mounted) return;
@@ -56,13 +55,13 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         final data = doc.data()!;
         final artifact = Artifact(
           id: doc.id,
-          name: (data['name'] ?? data['Name'] ?? '').toString().trim(),
-          period: (data['period'] ?? '').toString().trim(),
-          section: (data['section'] ?? '').toString().trim(),
-          description: (data['description'] ?? '').toString().trim(),
-          details: (data['details'] ?? '').toString().trim(),
-          imageUrl: (data['imageUrl'] ?? '').toString().trim(),
-          modelUrl: data['modelUrl']?.toString().trim(),
+          name: (data['name'] ?? '').toString(),
+          period: (data['period'] ?? '').toString(),
+          section: (data['section'] ?? '').toString(),
+          description: (data['description'] ?? '').toString(),
+          details: (data['details'] ?? '').toString(),
+          imageUrl: (data['imageUrl'] ?? '').toString(),
+          modelUrl: data['modelUrl']?.toString(),
         );
 
         setState(() => _loading = false);
@@ -152,8 +151,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.black54,
                   borderRadius: BorderRadius.circular(20),
@@ -165,6 +163,49 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               ),
             ),
           ),
+          if (kIsWeb)
+            Positioned.fill(
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  margin: const EdgeInsets.symmetric(horizontal: 40),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 10)],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.camera_alt, size: 64, color: Color(0xFF2C1810)),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Scanner on Web',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Browsers often block camera access on localhost. You can manually enter an artifact ID for testing:',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        decoration: const InputDecoration(
+                          hintText: 'Enter ID (e.g. artifact_001)',
+                          border: OutlineInputBorder(),
+                        ),
+                        onSubmitted: (val) {
+                          if (val.isNotEmpty) {
+                            _onDetect(BarcodeCapture(barcodes: [Barcode(rawValue: val)]));
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

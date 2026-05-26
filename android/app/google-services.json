@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "1092050575632",
-    "project_id": "smart-museum-app-c5d4c",
-    "storage_bucket": "smart-museum-app-c5d4c.firebasestorage.app"
+    "project_number": "571254080057",
+    "project_id": "museum-app-8dd4b",
+    "storage_bucket": "museum-app-8dd4b.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1092050575632:android:0ac71abb9f5a863f720595",
+        "mobilesdk_app_id": "1:571254080057:android:ed8c94ede136e534c743e8",
         "android_client_info": {
           "package_name": "com.example.museum_app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBK0tsbA_BVmNo0VmYY1IXGg-3DBCr_SX0"
+          "current_key": "AIzaSyC10sTrdTpwEcvO_y3dXqqnfdNQoNGbH3k"
         }
       ],
       "services": {
