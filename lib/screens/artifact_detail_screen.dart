@@ -114,7 +114,12 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(widget.artifact.name, style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 28)),
+                                Text(
+                                  l10n.localeName == 'si' && widget.artifact.nameSi != null 
+                                    ? widget.artifact.nameSi! 
+                                    : widget.artifact.name, 
+                                  style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 28)
+                                ),
                                 const SizedBox(height: 8),
                                 Text(widget.artifact.period, style: const TextStyle(fontSize: 18, color: Color(0xFFC9A84C), fontWeight: FontWeight.bold)),
                               ],

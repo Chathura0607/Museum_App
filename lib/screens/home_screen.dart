@@ -41,9 +41,43 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _toggleLanguage() {
-    setState(() => _isSinhala = !_isSinhala);
-    MuseumApp.setLocale(context, _isSinhala ? const Locale('si') : const Locale('en'));
+  void _showLanguageSelector() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('SELECT LANGUAGE / භාෂාව තෝරන්න', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2C1810))),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: const Text('🇺🇸', style: TextStyle(fontSize: 24)),
+              title: const Text('English', style: TextStyle(fontWeight: FontWeight.bold)),
+              trailing: !_isSinhala ? const Icon(Icons.check_circle, color: Color(0xFFC9A84C)) : null,
+              onTap: () {
+                setState(() => _isSinhala = false);
+                MuseumApp.setLocale(context, const Locale('en'));
+                Navigator.pop(context);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Text('🇱🇰', style: TextStyle(fontSize: 24)),
+              title: const Text('සිංහල (Sinhala)', style: TextStyle(fontWeight: FontWeight.bold)),
+              trailing: _isSinhala ? const Icon(Icons.check_circle, color: Color(0xFFC9A84C)) : null,
+              onTap: () {
+                setState(() => _isSinhala = true);
+                MuseumApp.setLocale(context, const Locale('si'));
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _logout() {
@@ -126,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
         actions: [
           if (!_isSearching) IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()))),
-          if (!_isSearching) IconButton(icon: const Icon(Icons.translate), onPressed: _toggleLanguage),
+          if (!_isSearching) IconButton(icon: const Icon(Icons.language_rounded), onPressed: _showLanguageSelector),
           _isSearching 
             ? IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() { _isSearching = false; _searchQuery = ''; _searchController.clear(); }))
             : IconButton(icon: const Icon(Icons.search), onPressed: () => setState(() => _isSearching = true)),
@@ -315,10 +349,18 @@ class _HomeScreenState extends State<HomeScreen> {
       modelUrl: data['modelUrl']?.toString(),
       videoUrl: data['videoUrl']?.toString(),
       audioUrl: data['audioUrl']?.toString(),
+      descriptionSi: data['descriptionSi']?.toString(),
+      detailsSi: data['detailsSi']?.toString(),
+      nameSi: data['nameSi']?.toString(),
     );
   }
 
   Widget _buildArtifactCard(Artifact artifact) {
+    final l10n = AppLocalizations.of(context);
+    final isSinhala = l10n.localeName == 'si';
+    final name = isSinhala && (artifact.nameSi != null) ? artifact.nameSi! : artifact.name;
+    final description = isSinhala && (artifact.descriptionSi != null) ? artifact.descriptionSi! : artifact.description;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       child: InkWell(
@@ -365,12 +407,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: Text(artifact.name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.5))),
+                      Expanded(child: Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.5))),
                       Text(artifact.period, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFC9A84C))),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text(artifact.description, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.black54, fontSize: 14, height: 1.4)),
+                  Text(description, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.black54, fontSize: 14, height: 1.4)),
                 ],
               ),
             ),

@@ -13,6 +13,7 @@ class Artifact {
   final String? audioUrl;
   final String? descriptionSi;
   final String? detailsSi;
+  final String? nameSi;
 
   const Artifact({
     required this.id,
@@ -29,5 +30,6 @@ class Artifact {
     this.audioUrl,
     this.descriptionSi,
     this.detailsSi,
+    this.nameSi,
   });
 }
