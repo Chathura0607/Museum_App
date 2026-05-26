@@ -8,7 +8,6 @@ import 'artifact_detail_screen.dart';
 import 'map_screen.dart';
 import 'qr_scanner_screen.dart';
 import 'assistant_screen.dart';
-import 'model_viewer_screen.dart';
 import 'notifications_screen.dart';
 import 'dart:async';
 
@@ -228,25 +227,36 @@ class _HomeScreenState extends State<HomeScreen> {
                           itemBuilder: (context, index) {
                             final section = sections[index];
                             final isSelected = section == selectedSection;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 12),
-                              child: ChoiceChip(
-                                label: Text(section),
-                                selected: isSelected,
-                                onSelected: (val) => setState(() => selectedSection = section),
-                                selectedColor: isDark ? const Color(0xFFC9A84C) : const Color(0xFF2C1810),
-                                backgroundColor: isDark ? Colors.white10 : Colors.white,
-                                labelStyle: TextStyle(
-                                  color: isSelected 
-                                    ? (isDark ? const Color(0xFF2C1810) : const Color(0xFFC9A84C)) 
-                                    : (isDark ? Colors.white70 : Colors.black87), 
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+                            return TweenAnimationBuilder<double>(
+                              duration: Duration(milliseconds: 400 + (index * 100)),
+                              tween: Tween(begin: 0.0, end: 1.0),
+                              builder: (context, value, child) => Opacity(
+                                opacity: value,
+                                child: Transform.translate(
+                                  offset: Offset(20 * (1 - value), 0),
+                                  child: child,
                                 ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12), 
-                                  side: BorderSide(color: isSelected ? Colors.transparent : (isDark ? Colors.white10 : Colors.grey.shade200))
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 12),
+                                child: ChoiceChip(
+                                  label: Text(section),
+                                  selected: isSelected,
+                                  onSelected: (val) => setState(() => selectedSection = section),
+                                  selectedColor: isDark ? const Color(0xFFC9A84C) : const Color(0xFF2C1810),
+                                  backgroundColor: isDark ? Colors.white10 : Colors.white,
+                                  labelStyle: TextStyle(
+                                    color: isSelected 
+                                      ? (isDark ? const Color(0xFF2C1810) : const Color(0xFFC9A84C)) 
+                                      : (isDark ? Colors.white70 : Colors.black87), 
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16), 
+                                    side: BorderSide(color: isSelected ? Colors.transparent : (isDark ? Colors.white10 : Colors.grey.shade200))
+                                  ),
+                                  showCheckmark: false,
                                 ),
-                                showCheckmark: false,
                               ),
                             );
                           },
@@ -396,65 +406,133 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildArtifactCard(Artifact artifact) {
     final l10n = AppLocalizations.of(context);
     final isSinhala = l10n.localeName == 'si';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final name = isSinhala && (artifact.nameSi != null) ? artifact.nameSi! : artifact.name;
     final description = isSinhala && (artifact.descriptionSi != null) ? artifact.descriptionSi! : artifact.description;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ArtifactDetailScreen(artifact: artifact))),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                Hero(
-                  tag: 'artifact-${artifact.id}',
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black45 : Colors.brown.shade100.withOpacity(0.5),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(28),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ArtifactDetailScreen(artifact: artifact))),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  Hero(
+                    tag: 'artifact-${artifact.id}',
                     child: Image.network(
                       artifact.imageUrl,
-                      height: 240, width: double.infinity, fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => Container(height: 240, color: Colors.grey.shade200, child: const Icon(Icons.broken_image_rounded)),
+                      height: 280, width: double.infinity, fit: BoxFit.cover,
+                      errorBuilder: (c, e, s) => Container(height: 280, color: Colors.grey.shade200, child: const Icon(Icons.broken_image_rounded)),
                     ),
                   ),
-                ),
-                if (artifact.modelUrl != null && artifact.modelUrl!.isNotEmpty)
-                  Positioned(
-                    top: 16, right: 16,
+                  Positioned.fill(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(12), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)]),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.view_in_ar_rounded, size: 18, color: Color(0xFF2C1810)),
-                          SizedBox(width: 6),
-                          Text('3D', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF2C1810))),
-                        ],
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withOpacity(0.6),
+                          ],
+                          stops: const [0.6, 1.0],
+                        ),
                       ),
                     ),
                   ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(child: Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: -0.5))),
-                      Text(artifact.period, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFC9A84C))),
-                    ],
+                  if (artifact.modelUrl != null && artifact.modelUrl!.isNotEmpty)
+                    Positioned(
+                      top: 20, right: 20,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFC9A84C),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10)],
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.view_in_ar_rounded, size: 18, color: Color(0xFF2C1810)),
+                            SizedBox(width: 8),
+                            Text('3D', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF2C1810))),
+                          ],
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    bottom: 20, left: 24, right: 24,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            name.toUpperCase(), 
+                            style: const TextStyle(
+                              color: Colors.white, 
+                              fontSize: 22, 
+                              fontWeight: FontWeight.w900, 
+                              letterSpacing: 1,
+                              shadows: [Shadow(color: Colors.black45, blurRadius: 10)],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(description, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.black54, fontSize: 14, height: 1.4)),
                 ],
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFC9A84C).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            artifact.period, 
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800, 
+                              color: Color(0xFFC9A84C),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      description, 
+                      maxLines: 2, 
+                      overflow: TextOverflow.ellipsis, 
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

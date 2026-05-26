@@ -116,21 +116,52 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  l10n.localeName == 'si' && widget.artifact.nameSi != null 
+                                  (l10n.localeName == 'si' && widget.artifact.nameSi != null 
                                     ? widget.artifact.nameSi! 
-                                    : widget.artifact.name, 
-                                  style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 28)
+                                    : widget.artifact.name).toUpperCase(), 
+                                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                                    fontSize: 32,
+                                    height: 1.0,
+                                  ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(widget.artifact.period, style: const TextStyle(fontSize: 18, color: Color(0xFFC9A84C), fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFC9A84C).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    widget.artifact.period, 
+                                    style: const TextStyle(
+                                      fontSize: 14, 
+                                      color: Color(0xFFC9A84C), 
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                         ),
-                        IconButton.filled(
-                          onPressed: () => _toggleSpeech(l10n),
-                          icon: Icon(_isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded, color: const Color(0xFFC9A84C)),
-                          style: IconButton.styleFrom(backgroundColor: const Color(0xFF2C1810), padding: const EdgeInsets.all(12)),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2C1810),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF2C1810).withOpacity(0.3),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            onPressed: () => _toggleSpeech(l10n),
+                            icon: Icon(_isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded, color: const Color(0xFFC9A84C)),
+                            padding: const EdgeInsets.all(16),
+                          ),
                         ),
                       ],
                     ),
@@ -154,34 +185,51 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 32),
-                          Text(l10n.aboutArtifact, style: Theme.of(context).textTheme.headlineMedium),
+                          const SizedBox(height: 40),
+                          Text(l10n.aboutArtifact.toUpperCase(), style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: 2, fontWeight: FontWeight.w900)),
                           const SizedBox(height: 16),
                           Text(_getDisplayText(l10n), style: Theme.of(context).textTheme.bodyLarge),
                         ],
                       ),
                     ),
                     if (widget.artifact.modelUrl?.isNotEmpty ?? false) ...[
-                      const SizedBox(height: 32),
-                      ElevatedButton.icon(
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (c) => ModelViewerScreen(artifact: widget.artifact),
+                      const SizedBox(height: 48),
+                      Container(
+                        width: double.infinity,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF2C1810), Color(0xFF4A2B1E)],
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF2C1810).withOpacity(0.3),
+                              blurRadius: 15,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
-                        icon: const Icon(Icons.view_in_ar_rounded),
-                        label: const Text('EXPERIENCE IN 3D'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFC9A84C),
-                          foregroundColor: const Color(0xFF2C1810),
+                        child: ElevatedButton.icon(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (c) => ModelViewerScreen(artifact: widget.artifact),
+                            ),
+                          ),
+                          icon: const Icon(Icons.view_in_ar_rounded, size: 24),
+                          label: const Text('EXPERIENCE IN 3D'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                          ),
                         ),
                       ),
                     ],
                     if (widget.artifact.videoUrl?.isNotEmpty ?? false) ...[
-                      const SizedBox(height: 40),
-                      const Text('Discovery Video', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 48),
+                      Text('GUIDE VIDEO'.toUpperCase(), style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: 2, fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 20),
                       InkWell(
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => VideoPlayerPage(url: widget.artifact.videoUrl!))),
                         child: Container(
