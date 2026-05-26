@@ -16,7 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _ticketError;
   String? _nicError;
 
-  final _ticketRegex = RegExp(r'^TKT-\d{4}-\d{3}$');
+  final _ticketRegex = RegExp(r'^TKT-\d{4}-\d{2}-\d{2}-\d{3}$');
   final _oldNICRegex = RegExp(r'^\d{9}[VX]$');
   final _newNICRegex = RegExp(r'^\d{12}$');
 
@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _validateTicket() {
     final val = _ticketController.text.trim().toUpperCase();
     if (val.isEmpty) setState(() => _ticketError = null);
-    else if (!_ticketRegex.hasMatch(val)) setState(() => _ticketError = 'Required: TKT-2025-001');
+    else if (!_ticketRegex.hasMatch(val)) setState(() => _ticketError = 'Required: TKT-YYYY-MM-DD-001');
     else setState(() => _ticketError = null);
   }
 

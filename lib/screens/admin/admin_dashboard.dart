@@ -16,6 +16,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
   bool _isSeeding = false;
 
+  // Attendance Filters
+  DateTime? _selectedDate;
+  String _nicFilter = '';
+  final TextEditingController _nicController = TextEditingController();
+
   Future<void> _handleRestoreData() async {
     setState(() => _isSeeding = true);
     try {
@@ -179,20 +184,80 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Widget _buildAttendanceList() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('attendance').orderBy('timestamp', descending: true).snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) return const SizedBox();
-        return ListView.builder(
-          padding: const EdgeInsets.all(32),
-          itemCount: snapshot.data!.docs.length,
-          itemBuilder: (context, index) {
-            final data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-            final date = (data['timestamp'] as Timestamp?)?.toDate();
-            return Card(child: ListTile(leading: const CircleAvatar(backgroundColor: Color(0xFFFCFAF7), child: Icon(Icons.person_rounded, color: Colors.brown)), title: Text('Pass: ${data['ticketNumber']}'), subtitle: Text('ID: ${data['nic']}'), trailing: Text(date != null ? DateFormat('HH:mm').format(date) : '--:--', style: const TextStyle(fontWeight: FontWeight.bold))));
-          },
-        );
-      },
+    Query query = FirebaseFirestore.instance.collection('attendance').orderBy('timestamp', descending: true);
+
+    if (_selectedDate != null) {
+      final startOfDay = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+      query = query.where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay)).where('timestamp', isLessThan: Timestamp.fromDate(endOfDay));
+    }
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          color: Colors.white,
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _nicController,
+                  decoration: InputDecoration(
+                    hintText: 'Search by ID...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    suffixIcon: _nicFilter.isNotEmpty ? IconButton(icon: const Icon(Icons.clear), onPressed: () { _nicController.clear(); setState(() => _nicFilter = ''); }) : null,
+                  ),
+                  onChanged: (val) => setState(() => _nicFilter = val.toUpperCase()),
+                ),
+              ),
+              const SizedBox(width: 16),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final picked = await showDatePicker(context: context, initialDate: _selectedDate ?? DateTime.now(), firstDate: DateTime(2020), lastDate: DateTime.now());
+                  if (picked != null) setState(() => _selectedDate = picked);
+                },
+                icon: const Icon(Icons.calendar_today),
+                label: Text(_selectedDate == null ? 'All Dates' : DateFormat('MMM dd, yyyy').format(_selectedDate!)),
+              ),
+              if (_selectedDate != null) IconButton(icon: const Icon(Icons.history_toggle_off), onPressed: () => setState(() => _selectedDate = null)),
+            ],
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: query.snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+              if (!snapshot.hasData) return const SizedBox();
+              
+              var docs = snapshot.data!.docs;
+              if (_nicFilter.isNotEmpty) {
+                docs = docs.where((doc) => (doc['nic'] ?? '').toString().toUpperCase().contains(_nicFilter)).toList();
+              }
+
+              if (docs.isEmpty) return const Center(child: Text('No visitor records found.'));
+
+              return ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: docs.length,
+                itemBuilder: (context, index) {
+                  final data = docs[index].data() as Map<String, dynamic>;
+                  final date = (data['timestamp'] as Timestamp?)?.toDate();
+                  return Card(
+                    child: ListTile(
+                      leading: const CircleAvatar(backgroundColor: Color(0xFFFCFAF7), child: Icon(Icons.person_rounded, color: Colors.brown)),
+                      title: Text('Pass: ${data['ticketNumber']}'),
+                      subtitle: Text('ID: ${data['nic']}'),
+                      trailing: Text(date != null ? DateFormat('MMM dd, HH:mm').format(date) : '--:--', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
