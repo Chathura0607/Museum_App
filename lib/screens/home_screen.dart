@@ -219,7 +219,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (!_isSearching && sections.isNotEmpty)
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        height: 75,
+                        height: 85,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -240,22 +240,28 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.only(right: 12),
                                 child: ChoiceChip(
-                                  label: Text(section),
+                                  label: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    child: Text(section),
+                                  ),
                                   selected: isSelected,
                                   onSelected: (val) => setState(() => selectedSection = section),
                                   selectedColor: isDark ? const Color(0xFFC9A84C) : const Color(0xFF2C1810),
-                                  backgroundColor: isDark ? Colors.white10 : Colors.white,
+                                  backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
                                   labelStyle: TextStyle(
                                     color: isSelected 
                                       ? (isDark ? const Color(0xFF2C1810) : const Color(0xFFC9A84C)) 
                                       : (isDark ? Colors.white70 : Colors.black87), 
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
+                                    fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                                    letterSpacing: 0.5,
                                   ),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16), 
-                                    side: BorderSide(color: isSelected ? Colors.transparent : (isDark ? Colors.white10 : Colors.grey.shade200))
+                                    borderRadius: BorderRadius.circular(20), 
+                                    side: BorderSide(color: isSelected ? Colors.transparent : (isDark ? Colors.white10 : Colors.brown.shade50))
                                   ),
                                   showCheckmark: false,
+                                  elevation: isSelected ? 8 : 0,
+                                  shadowColor: (isDark ? const Color(0xFFC9A84C) : const Color(0xFF2C1810)).withOpacity(0.3),
                                 ),
                               ),
                             );
@@ -263,7 +269,58 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     Expanded(
-                      child: _isSearching ? _buildSearchResults(allDocs, l10n) : _buildSectionArtifacts(allDocs, l10n),
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final crossAxisCount = constraints.maxWidth > 900 ? 3 : (constraints.maxWidth > 600 ? 2 : 1);
+                            final filteredDocs = _isSearching 
+                                ? allDocs.where((doc) {
+                                    final name = doc['name'].toString().toLowerCase();
+                                    final desc = doc['description'].toString().toLowerCase();
+                                    return name.contains(_searchQuery) || desc.contains(_searchQuery);
+                                  }).toList()
+                                : allDocs.where((doc) => doc['section'] == selectedSection).toList();
+
+                            if (filteredDocs.isEmpty) {
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.withOpacity(0.2)),
+                                    const SizedBox(height: 16),
+                                    Text('NO TREASURES FOUND', style: TextStyle(color: Colors.grey.withOpacity(0.5), fontWeight: FontWeight.w900, letterSpacing: 2)),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            return GridView.builder(
+                              key: ValueKey('${selectedSection}_$_isSearching'),
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                crossAxisSpacing: 24,
+                                mainAxisSpacing: 24,
+                                childAspectRatio: 0.85,
+                              ),
+                              itemCount: filteredDocs.length,
+                              itemBuilder: (context, index) => TweenAnimationBuilder<double>(
+                                duration: Duration(milliseconds: 500 + (index * 100)),
+                                tween: Tween(begin: 0.0, end: 1.0),
+                                builder: (context, value, child) => Opacity(
+                                  opacity: value,
+                                  child: Transform.translate(
+                                    offset: Offset(0, 50 * (1 - value)),
+                                    child: child,
+                                  ),
+                                ),
+                                child: _buildArtifactCard(_docToArtifact(filteredDocs[index])),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ],
                 );
@@ -411,124 +468,134 @@ class _HomeScreenState extends State<HomeScreen> {
     final description = isSinhala && (artifact.descriptionSi != null) ? artifact.descriptionSi! : artifact.description;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black45 : Colors.brown.shade100.withOpacity(0.5),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: isDark ? Colors.black54 : Colors.brown.shade100.withOpacity(0.3),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
           ),
         ],
       ),
       child: Material(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(32),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ArtifactDetailScreen(artifact: artifact))),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Stack(
-                children: [
-                  Hero(
-                    tag: 'artifact-${artifact.id}',
-                    child: Image.network(
-                      artifact.imageUrl,
-                      height: 280, width: double.infinity, fit: BoxFit.cover,
-                      errorBuilder: (c, e, s) => Container(height: 280, color: Colors.grey.shade200, child: const Icon(Icons.broken_image_rounded)),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.6),
-                          ],
-                          stops: const [0.6, 1.0],
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (artifact.modelUrl != null && artifact.modelUrl!.isNotEmpty)
-                    Positioned(
-                      top: 20, right: 20,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFC9A84C),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10)],
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(Icons.view_in_ar_rounded, size: 18, color: Color(0xFF2C1810)),
-                            SizedBox(width: 8),
-                            Text('3D', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF2C1810))),
-                          ],
-                        ),
-                      ),
-                    ),
-                  Positioned(
-                    bottom: 20, left: 24, right: 24,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            name.toUpperCase(), 
-                            style: const TextStyle(
-                              color: Colors.white, 
-                              fontSize: 22, 
-                              fontWeight: FontWeight.w900, 
-                              letterSpacing: 1,
-                              shadows: [Shadow(color: Colors.black45, blurRadius: 10)],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Expanded(
+                flex: 5,
+                child: Stack(
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFC9A84C).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            artifact.period, 
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800, 
-                              color: Color(0xFFC9A84C),
-                              fontSize: 12,
-                            ),
+                    Hero(
+                      tag: 'artifact-${artifact.id}',
+                      child: Image.network(
+                        artifact.imageUrl,
+                        width: double.infinity,
+                        height: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (c, e, s) => Container(color: Colors.grey.shade200, child: const Icon(Icons.broken_image_rounded)),
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.7),
+                            ],
+                            stops: const [0.5, 1.0],
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      description, 
-                      maxLines: 2, 
-                      overflow: TextOverflow.ellipsis, 
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5),
+                    if (artifact.modelUrl != null && artifact.modelUrl!.isNotEmpty)
+                      Positioned(
+                        top: 16, right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFC9A84C),
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10)],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.view_in_ar_rounded, size: 16, color: Color(0xFF2C1810)),
+                              SizedBox(width: 6),
+                              Text('3D', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF2C1810))),
+                            ],
+                          ),
+                        ),
+                      ),
+                    Positioned(
+                      bottom: 16, left: 20, right: 16,
+                      child: Text(
+                        name.toUpperCase(), 
+                        style: const TextStyle(
+                          color: Colors.white, 
+                          fontSize: 20, 
+                          fontWeight: FontWeight.w900, 
+                          letterSpacing: 1,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
+                ),
+              ),
+              Expanded(
+                flex: 3,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFC9A84C).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              artifact.period, 
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800, 
+                                color: Color(0xFFC9A84C),
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            description, 
+                            maxLines: 2, 
+                            overflow: TextOverflow.ellipsis, 
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Icon(Icons.arrow_forward_rounded, size: 18, color: const Color(0xFFC9A84C).withOpacity(0.5)),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
