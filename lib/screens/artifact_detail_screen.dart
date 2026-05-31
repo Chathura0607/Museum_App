@@ -68,7 +68,7 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -128,7 +128,7 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFC9A84C).withOpacity(0.1),
+                                    color: const Color(0xFFC9A84C).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
@@ -151,7 +151,7 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF2C1810).withOpacity(0.3),
+                                color: const Color(0xFF2C1810).withValues(alpha: 0.3),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                               ),
@@ -236,7 +236,7 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                           height: 180, width: double.infinity,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
-                            image: DecorationImage(image: NetworkImage(widget.artifact.imageUrl), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.4), BlendMode.darken)),
+                            image: DecorationImage(image: NetworkImage(widget.artifact.imageUrl), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.4), BlendMode.darken)),
                           ),
                           child: const Center(child: Icon(Icons.play_circle_fill_rounded, size: 64, color: Colors.white)),
                         ),
@@ -263,7 +263,7 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white, 
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
         borderRadius: BorderRadius.circular(16), 
         border: Border.all(color: isDark ? Colors.white10 : Colors.brown.shade50)
       ),

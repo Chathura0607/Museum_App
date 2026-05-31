@@ -83,8 +83,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    const Color(0xFF2C1810).withOpacity(0.4),
-                    const Color(0xFF2C1810).withOpacity(0.95),
+                    const Color(0xFF2C1810).withValues(alpha: 0.4),
+                    const Color(0xFF2C1810).withValues(alpha: 0.95),
                   ],
                 ),
               ),
@@ -107,10 +107,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
+                          color: Colors.white.withValues(alpha: 0.05),
                           shape: BoxShape.circle,
                           border: Border.all(color: const Color(0xFFC9A84C), width: 1.5),
-                          boxShadow: [BoxShadow(color: const Color(0xFFC9A84C).withOpacity(0.1), blurRadius: 40)],
+                          boxShadow: [BoxShadow(color: const Color(0xFFC9A84C).withValues(alpha: 0.1), blurRadius: 40)],
                         ),
                         child: const Icon(Icons.museum_rounded, size: 50, color: Color(0xFFC9A84C)),
                       ),
@@ -125,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: Column(
                         children: [
-                          const Text('ARTSPHERE', style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 8)),
+                          const Text('ARTSPHERE', style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 8)),
                           const Text('YOUR PERSONAL CURATOR', style: TextStyle(fontSize: 10, color: Color(0xFFC9A84C), letterSpacing: 4, fontWeight: FontWeight.bold)),
                         ],
                       ),
@@ -141,9 +141,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(40),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
+                          color: Colors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(40),
-                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                         ),
                         child: Column(
                           children: [
@@ -190,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 48),
                     TextButton(
                       onPressed: _showAdminLogin,
-                      child: Text('CURATOR PORTAL', style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 11, letterSpacing: 3, fontWeight: FontWeight.bold)),
+                      child: Text('CURATOR PORTAL', style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 11, letterSpacing: 3, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),

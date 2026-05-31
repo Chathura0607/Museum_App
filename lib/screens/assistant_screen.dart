@@ -91,7 +91,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
               decoration: BoxDecoration(
                 color: isUser ? const Color(0xFF2C1810) : Colors.white,
                 borderRadius: BorderRadius.only(topLeft: const Radius.circular(20), topRight: const Radius.circular(20), bottomLeft: Radius.circular(isUser ? 20 : 4), bottomRight: Radius.circular(isUser ? 4 : 20)),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: Text(message.text, style: TextStyle(color: isUser ? Colors.white : Colors.black87, fontSize: 15, height: 1.5)),
             ),
@@ -105,7 +105,7 @@ class _AssistantScreenState extends State<AssistantScreen> {
 
   Widget _buildInputBar() => Container(
     padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-    decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))]),
+    decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2))]),
     child: Row(children: [
       Expanded(child: TextField(controller: _controller, decoration: InputDecoration(hintText: 'Ask your Curator...', filled: true, fillColor: Colors.grey.shade100, border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none), contentPadding: const EdgeInsets.symmetric(horizontal: 20)))),
       const SizedBox(width: 12),

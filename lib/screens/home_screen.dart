@@ -142,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ) : null,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, -5))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, -5))],
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
@@ -247,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   selected: isSelected,
                                   onSelected: (val) => setState(() => selectedSection = section),
                                   selectedColor: isDark ? const Color(0xFFC9A84C) : const Color(0xFF2C1810),
-                                  backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                                  backgroundColor: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
                                   labelStyle: TextStyle(
                                     color: isSelected 
                                       ? (isDark ? const Color(0xFF2C1810) : const Color(0xFFC9A84C)) 
@@ -261,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   showCheckmark: false,
                                   elevation: isSelected ? 8 : 0,
-                                  shadowColor: (isDark ? const Color(0xFFC9A84C) : const Color(0xFF2C1810)).withOpacity(0.3),
+                                  shadowColor: (isDark ? const Color(0xFFC9A84C) : const Color(0xFF2C1810)).withValues(alpha: 0.3),
                                 ),
                               ),
                             );
@@ -287,9 +287,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.withOpacity(0.2)),
+                                    Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.withValues(alpha: 0.2)),
                                     const SizedBox(height: 16),
-                                    Text('NO TREASURES FOUND', style: TextStyle(color: Colors.grey.withOpacity(0.5), fontWeight: FontWeight.w900, letterSpacing: 2)),
+                                    Text('NO TREASURES FOUND', style: TextStyle(color: Colors.grey.withValues(alpha: 0.5), fontWeight: FontWeight.w900, letterSpacing: 2)),
                                   ],
                                 ),
                               );
@@ -366,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: BoxDecoration(
               color: const Color(0xFFC9A84C),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)],
             ),
             child: Row(
               children: [
@@ -390,52 +390,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildSearchResults(List<QueryDocumentSnapshot> docs, AppLocalizations l10n) {
-    final filtered = docs.where((doc) {
-      final name = doc['name'].toString().toLowerCase();
-      final desc = doc['description'].toString().toLowerCase();
-      return name.contains(_searchQuery) || desc.contains(_searchQuery);
-    }).toList();
-    if (filtered.isEmpty) return const Center(child: Text('No matching treasures found.'));
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: filtered.length,
-      itemBuilder: (context, index) => TweenAnimationBuilder<double>(
-        duration: Duration(milliseconds: 400 + (index * 100)),
-        tween: Tween(begin: 0.0, end: 1.0),
-        builder: (context, value, child) => Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 30 * (1 - value)),
-            child: child,
-          ),
-        ),
-        child: _buildArtifactCard(_docToArtifact(filtered[index])),
-      ),
-    );
-  }
-
-  Widget _buildSectionArtifacts(List<QueryDocumentSnapshot> docs, AppLocalizations l10n) {
-    final sectionDocs = docs.where((doc) => doc['section'] == selectedSection).toList();
-    return ListView.builder(
-      key: ValueKey(selectedSection), // Key ensures animation restarts on section change
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: sectionDocs.length,
-      itemBuilder: (context, index) => TweenAnimationBuilder<double>(
-        duration: Duration(milliseconds: 400 + (index * 100)),
-        tween: Tween(begin: 0.0, end: 1.0),
-        builder: (context, value, child) => Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 30 * (1 - value)),
-            child: child,
-          ),
-        ),
-        child: _buildArtifactCard(_docToArtifact(sectionDocs[index])),
-      ),
     );
   }
 
@@ -472,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black54 : Colors.brown.shade100.withOpacity(0.3),
+            color: isDark ? Colors.black54 : Colors.brown.shade100.withValues(alpha: 0.3),
             blurRadius: 30,
             offset: const Offset(0, 15),
           ),
@@ -509,7 +463,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.transparent,
-                              Colors.black.withOpacity(0.7),
+                              Colors.black.withValues(alpha: 0.7),
                             ],
                             stops: const [0.5, 1.0],
                           ),
@@ -524,7 +478,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFC9A84C),
                             borderRadius: BorderRadius.circular(12),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10)],
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 10)],
                           ),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
@@ -567,7 +521,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFC9A84C).withOpacity(0.1),
+                              color: const Color(0xFFC9A84C).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -591,7 +545,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Icon(Icons.arrow_forward_rounded, size: 18, color: const Color(0xFFC9A84C).withOpacity(0.5)),
+                          Icon(Icons.arrow_forward_rounded, size: 18, color: const Color(0xFFC9A84C).withValues(alpha: 0.5)),
                         ],
                       ),
                     ],
