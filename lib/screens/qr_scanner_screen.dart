@@ -19,11 +19,14 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   MobileScannerController? _controller;
   bool _scanned = false;
   bool _loading = false;
+  bool _torchOn = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = MobileScannerController();
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+    );
   }
 
   @override
@@ -36,8 +39,8 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     if (_scanned) return;
     final barcode = capture.barcodes.firstOrNull;
     if (barcode == null) return;
-    final code = barcode.rawValue;
-    if (code == null) return;
+    final code = barcode.rawValue?.trim();
+    if (code == null || code.isEmpty) return;
 
     setState(() {
       _scanned = true;
@@ -52,39 +55,30 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       if (!mounted) return;
 
       if (doc.exists) {
-        final data = doc.data()!;
-        final artifact = Artifact(
-          id: doc.id,
-          name: (data['name'] ?? '').toString(),
-          period: (data['period'] ?? '').toString(),
-          section: (data['section'] ?? '').toString(),
-          description: (data['description'] ?? '').toString(),
-          details: (data['details'] ?? '').toString(),
-          imageUrl: (data['imageUrl'] ?? '').toString(),
-          modelUrl: data['modelUrl']?.toString(),
-        );
+        final artifact = Artifact.fromFirestore(doc);
 
         setState(() => _loading = false);
 
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => artifact.modelUrl != null &&
-                artifact.modelUrl!.isNotEmpty
+            builder: (_) => (artifact.modelUrl != null && artifact.modelUrl!.isNotEmpty)
                 ? ModelViewerScreen(artifact: artifact)
                 : ArtifactDetailScreen(artifact: artifact),
           ),
         ).then((_) {
-          _controller?.start();
-          setState(() => _scanned = false);
+          if (mounted) {
+            _controller?.start();
+            setState(() => _scanned = false);
+          }
         });
       } else {
         setState(() => _loading = false);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Artifact not found: $code'),
-            backgroundColor: Colors.red,
+            content: Text('Exhibit pass / QR not recognized: $code'),
+            backgroundColor: Colors.redAccent,
           ),
         );
         _controller?.start();
@@ -95,8 +89,8 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
+          content: Text('Error reading artifact data: $e'),
+          backgroundColor: Colors.redAccent,
         ),
       );
       _controller?.start();
@@ -107,10 +101,20 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(widget.l10n.scanTitle),
-        backgroundColor: Colors.brown[700],
-        foregroundColor: Colors.white,
+        title: Text(widget.l10n.scanTitle, style: const TextStyle(fontWeight: FontWeight.w900)),
+        backgroundColor: const Color(0xFF2C1810),
+        foregroundColor: const Color(0xFFC9A84C),
+        actions: [
+          IconButton(
+            icon: Icon(_torchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded, color: const Color(0xFFC9A84C)),
+            onPressed: () {
+              _controller?.toggleTorch();
+              setState(() => _torchOn = !_torchOn);
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -118,47 +122,77 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
             controller: _controller!,
             onDetect: _onDetect,
           ),
+          // Viewfinder Overlay
           Center(
             child: Container(
-              width: 250,
-              height: 250,
+              width: 270,
+              height: 270,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.amber, width: 3),
-                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFC9A84C), width: 3),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFC9A84C).withValues(alpha: 0.25),
+                    blurRadius: 25,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 12, left: 12,
+                    child: Container(width: 20, height: 20, decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFC9A84C), width: 4), left: BorderSide(color: Color(0xFFC9A84C), width: 4)))),
+                  ),
+                  Positioned(
+                    top: 12, right: 12,
+                    child: Container(width: 20, height: 20, decoration: const BoxDecoration(border: Border(top: BorderSide(color: Color(0xFFC9A84C), width: 4), right: BorderSide(color: Color(0xFFC9A84C), width: 4)))),
+                  ),
+                  Positioned(
+                    bottom: 12, left: 12,
+                    child: Container(width: 20, height: 20, decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFC9A84C), width: 4), left: BorderSide(color: Color(0xFFC9A84C), width: 4)))),
+                  ),
+                  Positioned(
+                    bottom: 12, right: 12,
+                    child: Container(width: 20, height: 20, decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFC9A84C), width: 4), right: BorderSide(color: Color(0xFFC9A84C), width: 4)))),
+                  ),
+                ],
               ),
             ),
           ),
           if (_loading)
             Container(
-              color: Colors.black54,
+              color: Colors.black87,
               child: const Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(color: Colors.amber),
+                    CircularProgressIndicator(color: Color(0xFFC9A84C)),
                     SizedBox(height: 16),
                     Text(
-                      'Loading artifact...',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                      'Unveiling artifact records...',
+                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
               ),
             ),
           Positioned(
-            bottom: 40,
-            left: 0,
-            right: 0,
+            bottom: 48,
+            left: 24,
+            right: 24,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(20),
+                  color: const Color(0xFF2C1810).withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: const Color(0xFFC9A84C).withValues(alpha: 0.4)),
                 ),
                 child: Text(
                   widget.l10n.scanPrompt,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
@@ -168,32 +202,38 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.all(24),
-                  margin: const EdgeInsets.symmetric(horizontal: 40),
+                  margin: const EdgeInsets.symmetric(horizontal: 32),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [const BoxShadow(color: Colors.black26, blurRadius: 10)],
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 20,
+                      )
+                    ],
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.camera_alt, size: 64, color: Color(0xFF2C1810)),
+                      const Icon(Icons.qr_code_scanner_rounded, size: 56, color: Color(0xFF2C1810)),
                       const SizedBox(height: 16),
                       const Text(
-                        'Scanner on Web',
-                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        'Direct Exhibit Test',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Browsers often block camera access on localhost. You can manually enter an artifact ID for testing:',
+                        'Enter an artifact ID directly for quick simulation:',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: Colors.black54, fontSize: 13),
                       ),
                       const SizedBox(height: 16),
                       TextField(
-                        decoration: const InputDecoration(
-                          hintText: 'Enter ID (e.g. artifact_001)',
-                          border: OutlineInputBorder(),
+                        decoration: InputDecoration(
+                          hintText: 'e.g. artifact_001, artifact_002',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
                         onSubmitted: (val) {
                           if (val.isNotEmpty) {
