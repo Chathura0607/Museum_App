@@ -235,7 +235,7 @@ class _MuseumAppState extends State<MuseumApp> {
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             elevation: 8,
-            shadowColor: const Color(0xFF2C1810).withOpacity(0.3),
+            shadowColor: const Color(0xFF2C1810).withValues(alpha: 0.3),
             backgroundColor: const Color(0xFF2C1810),
             foregroundColor: const Color(0xFFC9A84C),
             minimumSize: const Size(double.infinity, 60),
