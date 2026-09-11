@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/artifact.dart';
 import '../generated/app_localizations.dart';
+import '../data/favorites_manager.dart';
 import 'feedback_screen.dart';
 import 'model_viewer_screen.dart';
 import 'model_viewer_web.dart' if (dart.library.io) 'model_viewer_stub.dart';
@@ -16,28 +18,51 @@ class ArtifactDetailScreen extends StatefulWidget {
   State<ArtifactDetailScreen> createState() => _ArtifactDetailScreenState();
 }
 
-class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
+class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> with SingleTickerProviderStateMixin {
   final FlutterTts _tts = FlutterTts();
   bool _isSpeaking = false;
+  late AnimationController _waveController;
 
   @override
   void initState() {
     super.initState();
-    _tts.setCompletionHandler(() => setState(() => _isSpeaking = false));
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+    
+    _tts.setCompletionHandler(() {
+      if (mounted) setState(() => _isSpeaking = false);
+    });
+    _tts.setErrorHandler((msg) {
+      if (mounted) setState(() => _isSpeaking = false);
+    });
   }
 
   @override
   void dispose() {
+    _waveController.dispose();
     _tts.stop();
     super.dispose();
+  }
+
+  String _getDisplayName(AppLocalizations l10n) {
+    final isSinhala = l10n.localeName == 'si';
+    if (isSinhala && (widget.artifact.nameSi?.isNotEmpty ?? false)) {
+      return widget.artifact.nameSi!;
+    }
+    return widget.artifact.name;
   }
 
   String _getDisplayText(AppLocalizations l10n) {
     final isSinhala = l10n.localeName == 'si';
     if (isSinhala) {
-      return (widget.artifact.detailsSi ?? widget.artifact.descriptionSi ?? '').isNotEmpty 
-          ? (widget.artifact.detailsSi ?? widget.artifact.descriptionSi!) 
-          : widget.artifact.details;
+      if (widget.artifact.detailsSi != null && widget.artifact.detailsSi!.isNotEmpty) {
+        return widget.artifact.detailsSi!;
+      }
+      if (widget.artifact.descriptionSi != null && widget.artifact.descriptionSi!.isNotEmpty) {
+        return widget.artifact.descriptionSi!;
+      }
     }
     return widget.artifact.details.isNotEmpty ? widget.artifact.details : widget.artifact.description;
   }
@@ -51,15 +76,19 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
         final locale = l10n.localeName;
         if (kIsWeb) {
           final voices = await _tts.getVoices;
-          if (!voices.any((v) => v['locale'].toString().contains(locale))) {
-            if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Audio not supported for this language.')));
+          if (voices is List && !voices.any((v) => v['locale']?.toString().contains(locale) ?? false)) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Audio narration unavailable for this browser voice.')),
+              );
+            }
             return;
           }
         }
         await _tts.setLanguage(locale == 'si' ? 'si-LK' : 'en-US');
-        await _tts.setSpeechRate(0.5);
+        await _tts.setSpeechRate(0.48);
         if (mounted) setState(() => _isSpeaking = true);
-        await _tts.speak('${widget.artifact.name}. ${_getDisplayText(l10n)}');
+        await _tts.speak('${_getDisplayName(l10n)}. ${_getDisplayText(l10n)}');
       } catch (e) {
         if (mounted) setState(() => _isSpeaking = false);
       }
@@ -69,23 +98,87 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 400,
+            expandedHeight: 420,
             pinned: true,
             stretch: true,
             backgroundColor: const Color(0xFF2C1810),
+            leading: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CircleAvatar(
+                backgroundColor: Colors.black45,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+            actions: [
+              ValueListenableBuilder<Set<String>>(
+                valueListenable: FavoritesManager.instance.favoriteIdsNotifier,
+                builder: (context, favorites, _) {
+                  final isFav = favorites.contains(widget.artifact.id);
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.black45,
+                      child: IconButton(
+                        icon: Icon(
+                          isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          color: isFav ? Colors.redAccent : Colors.white,
+                        ),
+                        onPressed: () {
+                          FavoritesManager.instance.toggleFavorite(widget.artifact.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              duration: const Duration(seconds: 1),
+                              content: Text(
+                                isFav ? l10n.removeFromFavorites : l10n.addToFavorites,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               stretchModes: const [StretchMode.zoomBackground, StretchMode.blurBackground],
-              background: Hero(
-                tag: 'artifact-${widget.artifact.id}',
-                child: Image.network(
-                  widget.artifact.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) => Container(color: Colors.brown.shade100, child: const Icon(Icons.broken_image, size: 80)),
-                ),
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Hero(
+                    tag: 'artifact-${widget.artifact.id}',
+                    child: Image.network(
+                      widget.artifact.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (c, e, s) => Container(
+                        color: const Color(0xFF2C1810),
+                        child: const Icon(Icons.museum_rounded, size: 80, color: Color(0xFFC9A84C)),
+                      ),
+                    ),
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.3),
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.8),
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -100,6 +193,7 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Title and Audio Button Row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,26 +210,26 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  (l10n.localeName == 'si' && widget.artifact.nameSi != null 
-                                    ? widget.artifact.nameSi! 
-                                    : widget.artifact.name).toUpperCase(), 
+                                  _getDisplayName(l10n).toUpperCase(),
                                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                    fontSize: 32,
-                                    height: 1.0,
-                                  ),
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w900,
+                                        height: 1.1,
+                                      ),
                                 ),
                                 const SizedBox(height: 12),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFFC9A84C).withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
+                                    color: const Color(0xFFC9A84C).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: const Color(0xFFC9A84C).withValues(alpha: 0.3)),
                                   ),
                                   child: Text(
-                                    widget.artifact.period, 
+                                    widget.artifact.period,
                                     style: const TextStyle(
-                                      fontSize: 14, 
-                                      color: Color(0xFFC9A84C), 
+                                      fontSize: 13,
+                                      color: Color(0xFFC9A84C),
                                       fontWeight: FontWeight.w900,
                                       letterSpacing: 1,
                                     ),
@@ -145,55 +239,82 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                             ),
                           ),
                         ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2C1810),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF2C1810).withValues(alpha: 0.3),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            onPressed: () => _toggleSpeech(l10n),
-                            icon: Icon(_isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded, color: const Color(0xFFC9A84C)),
-                            padding: const EdgeInsets.all(16),
+                        const SizedBox(width: 16),
+                        GestureDetector(
+                          onTap: () => _toggleSpeech(l10n),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: _isSpeaking ? const Color(0xFFC9A84C) : const Color(0xFF2C1810),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFC9A84C).withValues(alpha: _isSpeaking ? 0.4 : 0.2),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _isSpeaking ? Icons.stop_rounded : Icons.volume_up_rounded,
+                                  color: _isSpeaking ? const Color(0xFF2C1810) : const Color(0xFFC9A84C),
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _isSpeaking ? l10n.stop : l10n.listen,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 12,
+                                    letterSpacing: 1,
+                                    color: _isSpeaking ? const Color(0xFF2C1810) : const Color(0xFFC9A84C),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 24),
-                    TweenAnimationBuilder<double>(
-                      duration: const Duration(milliseconds: 800),
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      builder: (context, value, child) => Opacity(
-                        opacity: value,
-                        child: Transform.translate(offset: Offset(0, 20 * (1 - value)), child: child),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    // Chips Row
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
                         children: [
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                _buildInfoChip(Icons.museum_rounded, widget.artifact.section),
-                                if (widget.artifact.location?.isNotEmpty ?? false) ...[const SizedBox(width: 8), _buildInfoChip(Icons.location_on_rounded, widget.artifact.location!)],
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-                          Text(l10n.aboutArtifact.toUpperCase(), style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: 2, fontWeight: FontWeight.w900)),
-                          const SizedBox(height: 16),
-                          Text(_getDisplayText(l10n), style: Theme.of(context).textTheme.bodyLarge),
+                          _buildInfoChip(Icons.museum_rounded, widget.artifact.section),
+                          if (widget.artifact.location?.isNotEmpty ?? false) ...[
+                            const SizedBox(width: 8),
+                            _buildInfoChip(Icons.location_on_rounded, widget.artifact.location!),
+                          ],
+                          if (widget.artifact.year?.isNotEmpty ?? false) ...[
+                            const SizedBox(width: 8),
+                            _buildInfoChip(Icons.calendar_today_rounded, widget.artifact.year!),
+                          ],
                         ],
                       ),
                     ),
+                    const SizedBox(height: 36),
+                    // Description
+                    Text(
+                      l10n.aboutArtifact.toUpperCase(),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            letterSpacing: 2,
+                            fontWeight: FontWeight.w900,
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _getDisplayText(l10n),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.7),
+                    ),
+                    // 3D Experience Button
                     if (widget.artifact.modelUrl?.isNotEmpty ?? false) ...[
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 40),
                       Container(
                         width: double.infinity,
                         height: 64,
@@ -204,7 +325,7 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF2C1810).withOpacity(0.3),
+                              color: const Color(0xFF2C1810).withValues(alpha: 0.3),
                               blurRadius: 15,
                               offset: const Offset(0, 8),
                             ),
@@ -217,8 +338,15 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                               builder: (c) => ModelViewerScreen(artifact: widget.artifact),
                             ),
                           ),
-                          icon: const Icon(Icons.view_in_ar_rounded, size: 24),
-                          label: const Text('EXPERIENCE IN 3D'),
+                          icon: const Icon(Icons.view_in_ar_rounded, size: 24, color: Color(0xFFC9A84C)),
+                          label: Text(
+                            l10n.view3D.toUpperCase(),
+                            style: const TextStyle(
+                              letterSpacing: 2,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFFC9A84C),
+                            ),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
@@ -226,27 +354,60 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
                         ),
                       ),
                     ],
+                    // Guide Video Button
                     if (widget.artifact.videoUrl?.isNotEmpty ?? false) ...[
-                      const SizedBox(height: 48),
-                      Text('GUIDE VIDEO'.toUpperCase(), style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: 2, fontWeight: FontWeight.w900)),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 40),
+                      Text(
+                        'GUIDE VIDEO',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: 2, fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 16),
                       InkWell(
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => VideoPlayerPage(url: widget.artifact.videoUrl!))),
+                        borderRadius: BorderRadius.circular(24),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (c) => VideoPlayerPage(url: widget.artifact.videoUrl!)),
+                        ),
                         child: Container(
-                          height: 180, width: double.infinity,
+                          height: 190,
+                          width: double.infinity,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            image: DecorationImage(image: NetworkImage(widget.artifact.imageUrl), fit: BoxFit.cover, colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.4), BlendMode.darken)),
+                            borderRadius: BorderRadius.circular(24),
+                            image: DecorationImage(
+                              image: NetworkImage(widget.artifact.imageUrl),
+                              fit: BoxFit.cover,
+                              colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.45), BlendMode.darken),
+                            ),
                           ),
-                          child: const Center(child: Icon(Icons.play_circle_fill_rounded, size: 64, color: Colors.white)),
+                          child: const Center(
+                            child: Icon(Icons.play_circle_fill_rounded, size: 68, color: Color(0xFFC9A84C)),
+                          ),
                         ),
                       ),
                     ],
                     const SizedBox(height: 48),
-                    ElevatedButton.icon(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => FeedbackScreen(artifact: widget.artifact))),
-                      icon: const Icon(Icons.rate_review_rounded),
-                      label: const Text('SHARE YOUR THOUGHTS'),
+                    // Related Exhibits Section
+                    _buildRelatedSection(l10n),
+                    const SizedBox(height: 36),
+                    // Feedback CTA
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (c) => FeedbackScreen(artifact: widget.artifact)),
+                        ),
+                        icon: const Icon(Icons.rate_review_rounded, color: Color(0xFFC9A84C)),
+                        label: Text(
+                          l10n.feedbackTitle.toUpperCase(),
+                          style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFFC9A84C), width: 1.5),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -258,21 +419,129 @@ class _ArtifactDetailScreenState extends State<ArtifactDetailScreen> {
     );
   }
 
+  Widget _buildRelatedSection(AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.relatedExhibits.toUpperCase(),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(letterSpacing: 2, fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 16),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('artifacts')
+              .where('section', isEqualTo: widget.artifact.section)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) return const SizedBox.shrink();
+            final items = snapshot.data!.docs
+                .map((d) => Artifact.fromFirestore(d))
+                .where((a) => a.id != widget.artifact.id)
+                .toList();
+
+            if (items.isEmpty) return const SizedBox.shrink();
+
+            return SizedBox(
+              height: 160,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  final isSi = l10n.localeName == 'si';
+                  final title = isSi && (item.nameSi?.isNotEmpty ?? false) ? item.nameSi! : item.name;
+
+                  return GestureDetector(
+                    onTap: () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => ArtifactDetailScreen(artifact: item)),
+                    ),
+                    child: Container(
+                      width: 140,
+                      margin: const EdgeInsets.only(right: 14),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: Colors.brown.withValues(alpha: 0.15)),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Image.network(
+                              item.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, e, s) => Container(color: Colors.grey.shade300),
+                            ),
+                          ),
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.85)],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 10,
+                            left: 10,
+                            right: 10,
+                            child: Text(
+                              title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildInfoChip(IconData icon, String label) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
-        borderRadius: BorderRadius.circular(16), 
-        border: Border.all(color: isDark ? Colors.white10 : Colors.brown.shade50)
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.brown.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 16, color: const Color(0xFFC9A84C)),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: isDark ? Colors.white70 : Colors.black87)),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
+          ),
         ],
       ),
     );
@@ -297,13 +566,17 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         ..loadRequest(Uri.parse(widget.url));
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Guide Video')),
-      body: kIsWeb 
-        ? buildWebView(widget.url, 'video-${widget.url.hashCode}')
-        : WebViewWidget(controller: controller!),
+      appBar: AppBar(
+        title: const Text('Guide Video'),
+        backgroundColor: const Color(0xFF2C1810),
+      ),
+      body: kIsWeb
+          ? buildWebView(widget.url, 'video-${widget.url.hashCode}')
+          : WebViewWidget(controller: controller!),
     );
   }
 }
