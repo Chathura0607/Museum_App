@@ -1,3 +1,5 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -121,5 +123,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logout => 'Exit Museum';
 
   @override
-  String get logoutConfirm => 'Are you sure you want to end your museum session?';
+  String get logoutConfirm =>
+      'Are you sure you want to end your museum session?';
 }
